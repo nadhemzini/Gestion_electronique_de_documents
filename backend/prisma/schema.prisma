@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // uncomment next line if you use Prisma <5.10
+  // directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Enum for user roles
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(USER)
+  documents Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  subCategories SubCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubCategory {
+  id         String     @id @default(uuid())
+  name       String
+  categoryId String
+  category   Category   @relation(fields: [categoryId], references: [id])
+  documents  Document[]
+}
+
+model Document {
+  id       String @id @default(uuid())
+  title    String
+  filePath String // ex. uploads/uuid.pdf
+  fileKey  String // ← requis !
+
+  mimeType      String
+  subCategoryId String
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+//donc ch3ana npm i prisma -D 
+// ba3d npx prisma init
+// w ba3ed matrak7 schema mta3k ta3ml migration => npx prisma migrate dev -- wla b nom npx prisma migrate dev --name "init" (par exemple )
+//w itha kan badlt faha tnajm ta3ml npx prisma generate
+// w ba3d ta3ml migration jdida npx prisma migrate dev --name "new_migration_name" 
+// SO  if we are using PRISMA  we don't need to create the database manually, and we don't need to use the dto and the entity classes
+//

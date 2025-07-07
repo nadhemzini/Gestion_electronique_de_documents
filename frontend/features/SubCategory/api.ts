@@ -33,6 +33,16 @@ export async function deleteSubCategory(id: string) {
     return data;
 }
 /**
+ * get/categories/:id
+ * get a category and returns the get row.
+ */
+export async function getSubCategory(id: string) {
+    console.log("getsubCategory", id);
+    const { data } = await axios.get(`/sub-category/${id}`);
+    console.log("getsubCategory response", data);
+    return data;
+}
+/**
  * GET /categories
  * Returns all categories.
  */
@@ -41,5 +51,15 @@ export async function getallSubCategory() {
     const { data } = await axios.get("/sub-category");
     console.log("getallCategory response", data);
     return data ;
+}
+/**
+ * GET /categories (count)
+ * Returns all categories.
+ */
+export async function countDocumentSubCategory(id: string) {
+    console.log("countDocumentSubCategory");
+    const { data } = await axios.get(`/sub-category/${id}/document-count`);
+    console.log("countDocumentSubCategory response", data.documents);
+    return data.documents ;
 }
 

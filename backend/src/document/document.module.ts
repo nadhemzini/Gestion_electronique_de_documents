@@ -1,4 +1,3 @@
-// src/document/document.module.ts
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -7,11 +6,11 @@ import { extname } from 'path';
 
 import { DocumentController } from './document.controller';
 import { DocumentService } from './document.service';
-import { DatabaseModule } from '../database/database.module'; // ← ICI
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
   imports: [
-    DatabaseModule, // ← indispensable
+    DatabaseModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads',

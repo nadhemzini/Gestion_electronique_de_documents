@@ -3,9 +3,10 @@
 import { ChevronDown, ChevronRight, Folder, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { getallCategory } from "@/features/category/api"
 import Category from "@/features/category/Category"
+import { countDocumentSubCategory } from "@/features/SubCategory/api"
 
 interface DocumentTreeProps {
   selectedCategory: string
@@ -17,6 +18,7 @@ export function DocumentTree({ selectedCategory, onCategorySelect }: DocumentTre
   const [expandedItems, setExpandedItems] = useState<string[]>(["documents-a-classer"])
 
   const [categories, setCategories] = useState<Category[]> ([])
+// Initialize categories state as an empty array
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -34,6 +36,20 @@ console.log("categories", categories)
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }
+
+  useEffect(() => {
+    const fetchCountDoc = async (id:string) => {
+      try {
+        const data = await countDocumentSubCategory(id);
+        console.log("Fetched categories:", data);
+        setCategories(data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    
+  }, []);
 
   return (
     <div className="p-4">
@@ -101,7 +117,7 @@ console.log("categories", categories)
                           selectedCategory === child.id ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-700"
                         }`}
                       >
-                        {/* {child.count} */}
+                       {child._count?.documents}
                       </Badge>
                     </div>
                   </Button>

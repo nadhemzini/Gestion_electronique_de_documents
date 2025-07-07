@@ -1,74 +1,67 @@
-// src/document/document.service.ts
-import { Injectable } from '@nestjs/common';
-// import { unlink } from 'node:fs/promises';
-import { Prisma } from '../../generated/prisma'; // alias selon ton path
-import { DatabaseService } from 'src/database/database.service';
+import { Prisma } from '../../generated/prisma';
 import * as path from 'node:path';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { unlink } from 'node:fs/promises';
+import { DatabaseService } from '../database/database.service';
+
+// Omit => le controller n’a pas besoin de fournir fileKey
+type CreateDocWithoutFileKey = Omit<
+  Prisma.DocumentUncheckedCreateInput,
+  'fileKey'
+>;
 
 @Injectable()
 export class DocumentService {
   constructor(private readonly db: DatabaseService) {}
 
-  /** Crée un document lié à une sous‑catégorie */
-
-  async create(createDto: Prisma.DocumentCreateInput) {
-    // dérive fileKey depuis filePath ou génère un UUID
-    const fileKey = path.basename(createDto.filePath); // «1492bfdf-da42-4984-9a84-22e9801b8d85.pdf»
-
+  /** Crée un document et génère fileKey automatiquement */
+  async create(dto: CreateDocWithoutFileKey) {
+    const fileKey = path.basename(dto.filePath);
     return this.db.document.create({
-      data: {
-        ...createDto,
-        fileKey,
-        subCategory: {
-          connect: {
-            id:
-              typeof createDto.subCategory === 'object' &&
-              createDto.subCategory !== null &&
-              'id' in createDto.subCategory
-                ? String((createDto.subCategory as { id: unknown }).id)
-                : undefined,
-          },
-        },
-      },
+      data: { ...dto, fileKey },
     });
   }
 
-  /** Tous les documents (tridesc sur la date) */
-  async findAll() {
+  findAll() {
     return this.db.document.findMany({
       orderBy: { createdAt: 'desc' },
       include: { subCategory: true },
     });
   }
 
-  /** Tous les documents d’une sous‑catégorie */
-  async findBySubCategory(subCategoryId: string) {
+  findBySubCategory(subCategoryId: string) {
     return this.db.document.findMany({
       where: { subCategoryId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  /** Détail d’un document */
-  async findOne(id: string) {
+  findOne(id: string) {
     return this.db.document.findUnique({
       where: { id },
       include: { subCategory: true },
     });
   }
 
-  /** Mise à jour (ex: titre) */
-  async update(id: string, updateDto: Prisma.DocumentUpdateInput) {
-    return this.db.document.update({
-      where: { id },
-      data: updateDto,
-    });
+  update(id: string, dto: Prisma.DocumentUpdateInput) {
+    return this.db.document.update({ where: { id }, data: dto });
   }
 
-  /** Delete + suppression du fichier disque */
-  // async remove(id: string) {
-  //   const doc = await this.db.document.delete({ where: { id } });
-  //   await unlink(doc.filePath).catch(() => null); // ignore si déjà supprimé
-  //   return doc;
-  // }
+  /** Supprime la ligne Document + le fichier physique */
+  async remove(id: string) {
+    // 1. supprime en DB et récupère le filePath
+    const doc = await this.db.document
+      .delete({
+        where: { id },
+        select: { filePath: true },
+      })
+      .catch(() => {
+        throw new NotFoundException('Document introuvable');
+      });
+
+    // 2. supprime le fichier (ignore si déjà effacé)
+    await unlink(doc.filePath).catch(() => null);
+
+    return { deleted: true };
+  }
 }

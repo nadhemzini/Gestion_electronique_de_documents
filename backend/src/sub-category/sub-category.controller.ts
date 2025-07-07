@@ -35,7 +35,10 @@ export class SubCategoryController {
   ) {
     return this.subCategoryService.update(id, updateSubCategoryDto);
   }
-
+  @Get(':id/document-count')
+  countDocs(@Param('id') id: string) {
+    return this.subCategoryService.countDocuments(id);
+  }
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.subCategoryService.remove(id);

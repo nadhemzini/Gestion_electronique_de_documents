@@ -15,7 +15,13 @@ export class CategoryService {
     return this.databaseService.category.findMany({
       orderBy: { createdAt: 'asc' },
       include: {
-        subCategories: true, // Include related products if needed
+        subCategories: {
+          include: {
+            _count: {
+              select: { documents: true }, // <- documents appartient à SubCategory
+            },
+          },
+        },
       },
     });
   }

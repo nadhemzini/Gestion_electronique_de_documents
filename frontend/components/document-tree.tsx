@@ -37,6 +37,8 @@ console.log("categories", categories)
     setExpandedItems((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }
 
+
+  
   useEffect(() => {
     const fetchCountDoc = async (id:string) => {
       try {

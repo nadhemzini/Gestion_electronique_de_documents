@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import {
   Download,
   Trash2,
@@ -11,9 +12,10 @@ import {
   PanelsTopBottom,
   Scissors,
 } from 'lucide-react';
-import { getDocsBySubCategory } from '@/features/document/api';
+import { deleteManyDocuments, deleteOneDocument, getDocsBySubCategory, mergeManyDocuments } from '@/features/document/api';
 import { Document } from '@/features/document/Document';
 import { getSubCategory } from '@/features/SubCategory/api';
+import { downloadFile } from '@/features/document/download';
 
 interface DocumentListProps {
   category: string | null;
@@ -71,10 +73,104 @@ export function DocumentList({ category, onDocumentSelect }: DocumentListProps) 
     );
     if (!checked) setSelectAll(false);
   };
+  const handleDeleteSelected = async () => {
+  if (!selectedDocs.length) return;
+
+  try {
+    if (selectedDocs.length === 1) {
+       await deleteOneDocument(selectedDocs[0]);
+    } else {
+       await deleteManyDocuments(selectedDocs);
+    }
+    
+    // Refresh the document list after deletion
+    const updatedDocs = documents.filter(doc => !selectedDocs.includes(doc.id));
+    setDocuments(updatedDocs);
+    setSelectedDocs([]);
+    setSelectAll(false);
+
+    // Show success toast
+    toast({
+      title: "✅ Suppression réussie",
+      description: `${selectedDocs.length} document${selectedDocs.length > 1 ? 's' : ''} supprimé${selectedDocs.length > 1 ? 's' : ''} avec succès`,
+      variant: "default",
+      className: "border-green-200 bg-green-50 text-green-800 [&>div]:text-green-800",
+    });
+  } catch (err) {
+    console.error("Erreur de suppression :", err);
+    
+    // Show error toast
+    toast({
+      title: "Erreur de suppression",
+      description: "Une erreur s'est produite lors de la suppression des documents",
+      variant: "destructive",
+    });
+  }
+};
+
+//------------------Merge documents----------------
+    const handleMergeSelected = async () => {
+  if (!selectedDocs.length) return;
+
+  console.log("Selected documents for merge:", selectedDocs);
+  try {
+    
+      const data =  await mergeManyDocuments(selectedDocs);
+    console.log("Merge response data:", data);
+    
+    // Refresh the document list after Merge
+    // const updatedDocs = documents.filter(doc => !selectedDocs.includes(doc.id));
+    // setDocuments(updatedDocs);
+    // setSelectedDocs([]);
+    // setSelectAll(false);
+
+    // Show success toast
+    toast({
+      title: "✅ fysionner réussie",
+      variant: "default",
+      className: "border-green-200 bg-green-50 text-green-800 [&>div]:text-green-800",
+    });
+
+  } catch (err) {
+    console.error("Erreur de suppression :", err);
+    
+    // Show error toast
+    toast({
+      title: "Erreur de fusi",
+      description: "Une erreur s'est produite lors de la fusion des documents",
+      variant: "destructive",
+    });
+  }
+};
+
+
+  //------------------download----------------
+  const handleDownloadSelected = () => {
+  if (selectedDocs.length === 1) {
+    // find fileKey of the doc
+    const doc = documents.find(d => d.id === selectedDocs[0]);
+    if (doc) downloadFile(doc.fileKey);
+  } else if (selectedDocs.length > 1) {
+    // download each file one by one (opens multiple tabs)
+   selectedDocs.forEach(id => {
+  const doc = documents.find(d => d.id === id);
+  if (doc) downloadFile(doc.fileKey); // will open download for each file
+});
+  }
+};
+
+
+
+
+
+
+
+
 
   const selCount = selectedDocs.length;
   const none = selCount === 0;
   const one = selCount === 1;
+  const oneOrMany = selCount >= 1;
   const many = selCount > 1;
 
   return (
@@ -89,7 +185,7 @@ export function DocumentList({ category, onDocumentSelect }: DocumentListProps) 
         <>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
-              <Button variant="outline" size="sm" disabled={!many}>
+              <Button variant="outline" size="sm" disabled={!many} onClick={handleMergeSelected}>
                 <PanelsTopBottom className="w-4 h-4 mr-2" />
                 Fusionner PDF
               </Button>
@@ -105,11 +201,12 @@ export function DocumentList({ category, onDocumentSelect }: DocumentListProps) 
           </div>
 
           <div className="flex items-center space-x-4 mb-4">
-            <Button variant="outline" size="sm" disabled={!one}>
+            <Button variant="outline" size="sm" disabled={!oneOrMany} onClick={handleDownloadSelected}> 
               <Download className="w-4 h-4 mr-2" />
               Extraire PDF
             </Button>
-            <Button variant="outline" size="sm" disabled={!many}>
+            <Button variant="outline" size="sm" disabled={!oneOrMany}   onClick={handleDeleteSelected}
+>
               <Trash2 className="w-4 h-4 mr-2" />
               Supprimer tous
             </Button>

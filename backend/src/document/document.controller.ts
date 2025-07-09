@@ -62,6 +62,16 @@ export class DocumentController {
   /** DELETE /documents/:id */
   @Delete(':id')
   delete(@Param('id') id: string) {
-    return this.docs.remove(id);
+    return this.docs.removeOne(id);
+  }
+  /** Delete (many documents) */
+  @Delete()
+  deleteMany(@Body() body: { ids: string[] }) {
+    return this.docs.removeMany(body.ids);
+  }
+  /** POST /documents/merge */
+  @Post('merge')
+  mergeMany(@Body() body: { ids: string[] }) {
+    return this.docs.mergeMany(body.ids);
   }
 }

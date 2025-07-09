@@ -1,4 +1,4 @@
-import axios, { InternalAxiosRequestConfig } from "axios";
+import axios from "axios";
 
 // 👉 Pull the token from localStorage *once per request*.
 const instance = axios.create({

@@ -51,3 +51,6 @@ npm run dev
 cd backend
 npm install
 npm run start:dev
+```
+and you need to set up the database on neon (with prisma)
+
